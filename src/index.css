@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base Reset ────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    @apply scroll-smooth;
+    font-size: 16px;
+  }
+
+  body {
+    @apply bg-zinc-950 text-zinc-100 font-sans antialiased;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track { @apply bg-zinc-900; }
+  ::-webkit-scrollbar-thumb { @apply bg-zinc-700 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-zinc-500; }
+
+  ::selection {
+    @apply bg-violet-600/40 text-white;
+  }
+}
+
+/* ── Design Tokens ─────────────────────────────────────── */
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-zinc-900 border border-zinc-800 rounded-xl;
+  }
+  .card-glass {
+    @apply backdrop-blur-xl bg-zinc-900/70 border border-zinc-700/50 rounded-xl;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
+           font-medium text-sm transition-all duration-150 cursor-pointer
+           disabled:opacity-40 disabled:cursor-not-allowed select-none;
+  }
+  .btn-primary {
+    @apply btn bg-violet-600 hover:bg-violet-500 text-white
+           shadow-lg shadow-violet-900/30 active:scale-95;
+  }
+  .btn-secondary {
+    @apply btn bg-zinc-800 hover:bg-zinc-700 text-zinc-200
+           border border-zinc-700 active:scale-95;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 hover:bg-red-500 text-white
+           shadow-lg shadow-red-900/30 active:scale-95;
+  }
+  .btn-ghost {
+    @apply btn text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 active:scale-95;
+  }
+  .btn-lg {
+    @apply px-6 py-3 text-base rounded-xl;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs rounded-md;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3
+           text-zinc-100 placeholder:text-zinc-500 text-sm
+           focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500
+           transition-all duration-150;
+  }
+  .textarea {
+    @apply input resize-none font-mono text-sm leading-relaxed;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+  .badge-green { @apply badge bg-emerald-900/50 text-emerald-300 border border-emerald-800/50; }
+  .badge-red { @apply badge bg-red-900/50 text-red-300 border border-red-800/50; }
+  .badge-violet { @apply badge bg-violet-900/50 text-violet-300 border border-violet-800/50; }
+  .badge-zinc { @apply badge bg-zinc-800 text-zinc-400 border border-zinc-700; }
+  .badge-amber { @apply badge bg-amber-900/50 text-amber-300 border border-amber-800/50; }
+
+  /* Section headings */
+  .section-title {
+    @apply text-xs font-semibold uppercase tracking-widest text-zinc-500;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-zinc-800 my-4;
+  }
+
+  /* Kahoot option colors */
+  .quiz-opt-0 { @apply bg-red-600 hover:bg-red-500 shadow-lg shadow-red-900/40; }
+  .quiz-opt-1 { @apply bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/40; }
+  .quiz-opt-2 { @apply bg-amber-500 hover:bg-amber-400 shadow-lg shadow-amber-900/40; }
+  .quiz-opt-3 { @apply bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/40; }
+}
+
+/* ── Animations ────────────────────────────────────────── */
+@layer utilities {
+  .animate-in { animation: fadeIn 0.2s ease-out; }
+  .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes buzzShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .buzz-shake { animation: buzzShake 0.5s ease-in-out; }
+
+  @keyframes pulseRed {
+    0%, 100% { background-color: rgba(220, 38, 38, 0.15); }
+    50% { background-color: rgba(220, 38, 38, 0.4); }
+  }
+  .pulse-red { animation: pulseRed 0.6s ease-in-out infinite; }
+
+  /* Glow effect for active elements */
+  .glow-violet { box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3), 0 0 20px rgba(139, 92, 246, 0.15); }
+  .glow-red { box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4), 0 0 30px rgba(239, 68, 68, 0.2); }
+}
