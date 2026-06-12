@@ -5,6 +5,7 @@
  */
 import { useEffect } from 'react';
 import { Download, FileText, Image, FileCode, X } from 'lucide-react';
+import { SERVER_URL } from '../../config';
 
 interface Resource {
   id: string;
@@ -33,8 +34,6 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
 export default function ResourceToast({ resource, onDismiss }: ResourceToastProps) {
   useEffect(() => {

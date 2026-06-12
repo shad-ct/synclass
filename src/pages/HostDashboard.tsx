@@ -17,8 +17,7 @@ import ResourceManager from '../components/host/ResourceManager';
 import BroadcastPanel from '../components/host/BroadcastPanel';
 import ConfusionMeter from '../components/host/ConfusionMeter';
 import ControlBar from '../components/host/ControlBar';
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+import { SERVER_URL } from '../config';
 
 interface Attendee {
   guestId: string;

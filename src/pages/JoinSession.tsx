@@ -15,6 +15,7 @@ const AvatarComponent = (Avatar as any).default || Avatar;
 import { v4 as uuidv4 } from 'uuid';
 import { Shuffle, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { SERVER_URL } from '../config';
 
 interface GuestProfile {
   guestId: string;
@@ -82,7 +83,7 @@ export default function JoinSession() {
     const validate = async () => {
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_SERVER_URL || 'http://localhost:3001'}/api/sessions/${roomCode}`
+          `${SERVER_URL}/api/sessions/${roomCode}`
         );
         const data = await res.json();
 

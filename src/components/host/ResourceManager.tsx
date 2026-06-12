@@ -4,6 +4,7 @@
  */
 import { useState, useRef } from 'react';
 import { Upload, FileText, Image, FileCode, Send, Cloud } from 'lucide-react';
+import { SERVER_URL } from '../../config';
 
 interface Resource {
   id: string;
@@ -21,8 +22,6 @@ interface ResourceManagerProps {
   onResourceUploaded: (resource: Resource) => void;
   onPushResource: (resourceId: string) => void;
 }
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
 function getFileIcon(mimeType: string) {
   if (mimeType.startsWith('image/')) return <Image className="w-4 h-4 text-blue-400" />;

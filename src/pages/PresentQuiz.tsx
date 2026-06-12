@@ -16,10 +16,11 @@ import Avatar from 'boring-avatars';
 import QRCode from 'react-qr-code';
 import { socket } from '../socket';
 import useSocket from '../hooks/useSocket';
+import { SERVER_URL } from '../config';
 
 const getValidComponent = (val: any): any => {
   if (!val) return null;
-  
+
   const isValid = (x: any) => {
     if (!x) return false;
     if (typeof x === 'function' || typeof x === 'string') return true;
@@ -32,7 +33,7 @@ const getValidComponent = (val: any): any => {
   if (val.QRCode && isValid(val.QRCode)) return val.QRCode;
   if (val.default && val.default.default && isValid(val.default.default)) return val.default.default;
   if (val.default && val.default.QRCode && isValid(val.default.QRCode)) return val.default.QRCode;
-  
+
   return val;
 };
 
@@ -172,7 +173,7 @@ export default function PresentQuiz() {
     const validate = async () => {
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_SERVER_URL || 'http://localhost:3001'}/api/sessions/${roomCode}`
+          `${SERVER_URL}/api/sessions/${roomCode}`
         );
         const data = await res.json();
         if (!data.success) {

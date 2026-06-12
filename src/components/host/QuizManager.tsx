@@ -8,26 +8,27 @@
  */
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, PlayCircle, BookOpen, X, Loader2 } from 'lucide-react';
+import { SERVER_URL } from '../../config';
 
 const ArrowLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="m12 19-7-7 7-7"/>
-    <path d="M19 12H5"/>
+    <path d="m12 19-7-7 7-7" />
+    <path d="M19 12H5" />
   </svg>
 );
 
 const EditIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M12 20h9"/>
-    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
   </svg>
 );
 
 const SaveIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-    <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-    <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+    <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+    <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
+    <path d="M7 3v4a1 1 0 0 0 1 1h7" />
   </svg>
 );
 
@@ -119,8 +120,7 @@ export default function QuizManager({
   const fetchQuizSets = async () => {
     setLoading(true);
     try {
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
-      const res = await fetch(`${serverUrl}/api/quizzes`);
+      const res = await fetch(`${SERVER_URL}/api/quizzes`);
       const data = await res.json();
       if (data.success) {
         setQuizSets(data.quizSets || []);
@@ -149,10 +149,9 @@ export default function QuizManager({
     }
 
     try {
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
       const url = editingSet
-        ? `${serverUrl}/api/quizzes/${editingSet._id}`
-        : `${serverUrl}/api/quizzes`;
+        ? `${SERVER_URL}/api/quizzes/${editingSet._id}`
+        : `${SERVER_URL}/api/quizzes`;
       const method = editingSet ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -178,8 +177,7 @@ export default function QuizManager({
   const handleDeleteQuizSet = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this quiz set permanently?')) return;
     try {
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
-      const res = await fetch(`${serverUrl}/api/quizzes/${id}`, {
+      const res = await fetch(`${SERVER_URL}/api/quizzes/${id}`, {
         method: 'DELETE',
       });
       const data = await res.json();
