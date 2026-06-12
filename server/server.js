@@ -19,7 +19,23 @@ const quizRoutes = require('./routes/quiz.routes');
 const { initSocketController } = require('./socket/socketController');
 
 const PORT = process.env.PORT || 3001;
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const normalizeOrigin = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return value.replace(/\/$/, '');
+  }
+};
+
+const FRONTEND_URL = normalizeOrigin(
+  process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://synclass.netlify.app'
+);
+const LOCAL_ORIGINS = ['http://localhost:5173', 'http://localhost:5174'];
+const ALLOWED_ORIGINS = [...new Set([FRONTEND_URL, ...LOCAL_ORIGINS].filter(Boolean))];
 
 // ─────────────────────────────────────────────────────────
 // App Bootstrap
@@ -27,10 +43,10 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const app = express();
 const httpServer = http.createServer(app);
 
-// Socket.io with CORS configured for Vite dev server
+// Socket.io with CORS configured for the deployed frontend and local dev
 const io = new Server(httpServer, {
   cors: {
-    origin: [CLIENT_URL, 'http://localhost:5174'],
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST', 'PATCH'],
     credentials: true,
   },
@@ -43,7 +59,7 @@ const io = new Server(httpServer, {
 // Middleware
 // ─────────────────────────────────────────────────────────
 app.use(cors({
-  origin: [CLIENT_URL, 'http://localhost:5174'],
+  origin: ALLOWED_ORIGINS,
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -87,7 +103,7 @@ const startServer = async () => {
   await connectDB();
   httpServer.listen(PORT, () => {
     console.log(`\n🚀 SynClass Server running on http://localhost:${PORT}`);
-    console.log(`   Socket.io accepting connections from: ${CLIENT_URL}`);
+    console.log(`   Allowed frontend origins: ${ALLOWED_ORIGINS.join(', ')}`);
     console.log(`   MongoDB: ${process.env.MONGO_URI || 'mongodb://localhost:27017/synclass'}\n`);
   });
 };
