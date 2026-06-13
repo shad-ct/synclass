@@ -40,7 +40,7 @@ export default function ConfusionMeter({ latest }: ConfusionMeterProps) {
   const isModerate = current >= 20 && current < 40;
 
   return (
-    <div className="card p-4 space-y-3">
+    <div className="card h-full min-h-0 p-3 space-y-2 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -57,7 +57,7 @@ export default function ConfusionMeter({ latest }: ConfusionMeterProps) {
 
       {/* Current reading */}
       <div className="flex items-end gap-3">
-        <div className={`text-4xl font-bold tabular-nums transition-colors duration-300 ${isHigh ? 'text-red-400' : isModerate ? 'text-amber-400' : 'text-emerald-400'}`}>
+        <div className={`text-3xl font-bold tabular-nums transition-colors duration-300 ${isHigh ? 'text-red-400' : isModerate ? 'text-amber-400' : 'text-emerald-400'}`}>
           {current}%
         </div>
         <div className="pb-1 text-xs text-zinc-500 space-y-0.5">
@@ -67,7 +67,7 @@ export default function ConfusionMeter({ latest }: ConfusionMeterProps) {
       </div>
 
       {/* Bar visualization */}
-      <div className="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500 ease-out"
           style={{
@@ -79,7 +79,7 @@ export default function ConfusionMeter({ latest }: ConfusionMeterProps) {
 
       {/* Sparkline chart */}
       {history.length > 2 && (
-        <div className="h-24 -mx-1">
+        <div className="h-10 -mx-1">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={history} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <defs>
@@ -110,7 +110,7 @@ export default function ConfusionMeter({ latest }: ConfusionMeterProps) {
       )}
 
       {history.length <= 2 && (
-        <p className="text-xs text-zinc-600 text-center py-2">Collecting data…</p>
+        <p className="text-xs text-zinc-600 text-center py-0.5">Collecting data…</p>
       )}
     </div>
   );

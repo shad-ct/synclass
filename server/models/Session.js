@@ -20,6 +20,22 @@ const BroadcastSchema = new mongoose.Schema({
   sentAt: { type: Date, default: Date.now },
 });
 
+const PollResponseSchema = new mongoose.Schema({
+  guestId: { type: String, required: true },
+  name: { type: String, default: '' },
+  optionIndex: { type: Number, required: true },
+  answeredAt: { type: Date, default: Date.now },
+}, { _id: false });
+
+const PollSchema = new mongoose.Schema({
+  question: { type: String, required: true, trim: true },
+  options: [{ type: String, required: true, trim: true }],
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now },
+  closedAt: { type: Date, default: null },
+  responses: [PollResponseSchema],
+});
+
 const SessionSchema = new mongoose.Schema({
   /** Unique 6-character alphanumeric room code */
   roomCode: {
@@ -45,6 +61,8 @@ const SessionSchema = new mongoose.Schema({
   broadcasts: [BroadcastSchema],
   /** References to quiz data documents for this session */
   quizzes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'QuizData' }],
+  /** Ad-hoc live polls created during the session */
+  polls: [PollSchema],
   /** References to resource files shared in this session */
   resources: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Resource' }],
 }, { timestamps: true });

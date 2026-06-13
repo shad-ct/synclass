@@ -5,6 +5,7 @@
 const Session = require('../models/Session');
 const Attendee = require('../models/Attendee');
 const { getRosterArray } = require('./socketUtils');
+const { buildPollPayload } = require('./pollHandler');
 
 /**
  * join_room — Attendee connects to a room.
@@ -83,6 +84,15 @@ async function handleJoinRoom(io, socket, payload, rooms) {
     io.to(`host:${code}`).emit('roster_update', {
       attendees: getRosterArray(room),
     });
+
+    if (room.pollState && room.pollState.isActive) {
+      const response = room.pollState.responses.get(guestId);
+      socket.emit('poll_started', {
+        ...buildPollPayload(room.pollState),
+        hasResponded: !!response,
+        selectedOption: response ? response.optionIndex : null,
+      });
+    }
 
     // If a quiz is active, immediately sync the newly joined/reconnected attendee with the current view
     if (room.quizState) {

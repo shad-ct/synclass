@@ -96,9 +96,9 @@ export default function ResourceManager({
   };
 
   return (
-    <div className="card p-4 space-y-3">
+    <div className="card h-full min-h-0 p-3 space-y-2 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <Cloud className="w-4 h-4 text-zinc-500" />
         <span className="text-sm font-semibold text-zinc-200">Resources</span>
       </div>
@@ -109,7 +109,7 @@ export default function ResourceManager({
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer
+        className={`border-2 border-dashed rounded-xl p-3 text-center cursor-pointer
                     transition-all duration-200 select-none
                     ${isDragging ? 'border-violet-500 bg-violet-900/20' : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/30'}
                     ${uploading ? 'opacity-60 pointer-events-none' : ''}`}
@@ -128,7 +128,7 @@ export default function ResourceManager({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-zinc-500">
-            <Upload className="w-6 h-6" />
+            <Upload className="w-5 h-5" />
             <p className="text-xs">
               <span className="text-zinc-300 font-medium">Drop a file</span> or click to upload
             </p>
@@ -139,11 +139,11 @@ export default function ResourceManager({
 
       {/* File list */}
       {resources.length > 0 && (
-        <div className="space-y-2 max-h-48 overflow-y-auto">
+        <div className="flex-1 min-h-0 space-y-2 overflow-y-auto">
           {resources.map((r) => (
             <div
               key={r.id}
-              className="flex items-center gap-3 p-2.5 bg-zinc-800/60 rounded-lg hover:bg-zinc-800 transition-colors"
+              className="flex items-center gap-3 p-2 bg-zinc-800/60 rounded-lg hover:bg-zinc-800 transition-colors"
             >
               <div className="w-8 h-8 rounded-md bg-zinc-900 border border-zinc-700 flex items-center justify-center shrink-0">
                 {getFileIcon(r.mimeType)}
@@ -166,7 +166,7 @@ export default function ResourceManager({
       )}
 
       {resources.length === 0 && !uploading && (
-        <p className="text-xs text-zinc-600 text-center">No files uploaded yet</p>
+        <p className="text-xs text-zinc-600 text-center mt-auto">No files uploaded yet</p>
       )}
     </div>
   );

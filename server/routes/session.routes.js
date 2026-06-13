@@ -16,6 +16,28 @@ const QuizData = require('../models/QuizData');
 // Generate a 6-character uppercase alphanumeric room code
 const nanoid = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 6);
 
+function serializePoll(poll) {
+  if (!poll) return null;
+
+  const optionCounts = Array(poll.options.length).fill(0);
+  for (const response of poll.responses || []) {
+    if (response.optionIndex >= 0 && response.optionIndex < optionCounts.length) {
+      optionCounts[response.optionIndex] += 1;
+    }
+  }
+
+  return {
+    id: poll._id,
+    question: poll.question,
+    options: poll.options,
+    isActive: poll.isActive,
+    createdAt: poll.createdAt,
+    closedAt: poll.closedAt,
+    responseCount: (poll.responses || []).length,
+    optionCounts,
+  };
+}
+
 /**
  * POST /api/sessions
  * Creates a new session with a unique room code.
@@ -130,6 +152,9 @@ router.get('/:roomCode/host-state', async (req, res) => {
     }
 
     const latestQuiz = session.quizzes[session.quizzes.length - 1];
+    const latestPoll = session.polls && session.polls.length > 0
+      ? session.polls[session.polls.length - 1]
+      : null;
 
     return res.json({
       success: true,
@@ -154,6 +179,7 @@ router.get('/:roomCode/host-state', async (req, res) => {
             askedQuestions: [...new Set((latestQuiz.responses || []).map(r => r.questionIndex))],
           }
         : null,
+      poll: serializePoll(latestPoll),
     });
   } catch (err) {
     console.error('[session.routes] GET /host-state error:', err.message);

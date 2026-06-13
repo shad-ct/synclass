@@ -249,8 +249,8 @@ export default function QuizManager({
   // ── 1. LIST VIEW ──────────────────────────────────────
   if (view === 'list') {
     return (
-      <div className="card p-4 space-y-3 h-full flex flex-col justify-between">
-        <div className="space-y-3 flex-1 flex flex-col min-h-0">
+      <div className="card p-3 space-y-2 h-full min-h-0 flex flex-col justify-between overflow-hidden">
+        <div className="space-y-2 flex-1 flex flex-col min-h-0">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -267,14 +267,14 @@ export default function QuizManager({
           </div>
 
           {/* List content */}
-          <div className="flex-1 overflow-auto space-y-2 pr-1 min-h-[220px]">
+          <div className="flex-1 min-h-0 overflow-auto space-y-2 pr-1">
             {loading ? (
-              <div className="h-48 flex flex-col items-center justify-center gap-2 text-zinc-500">
+              <div className="h-full min-h-32 flex flex-col items-center justify-center gap-2 text-zinc-500">
                 <Loader2 className="w-5 h-5 animate-spin text-violet-500" />
                 <span className="text-xs">Loading quiz sets…</span>
               </div>
             ) : quizSets.length === 0 ? (
-              <div className="h-48 border border-dashed border-zinc-800 rounded-xl flex flex-col items-center justify-center p-4 text-center space-y-2">
+              <div className="h-full min-h-32 border border-dashed border-zinc-800 rounded-xl flex flex-col items-center justify-center p-4 text-center space-y-2">
                 <p className="text-xs text-zinc-500 font-medium">No quiz sets saved in DB yet.</p>
                 <button
                   onClick={handleNewQuizSet}
@@ -331,7 +331,7 @@ export default function QuizManager({
   // ── 2. BUILD / EDIT VIEW ──────────────────────────────
   if (view === 'build') {
     return (
-      <div className="card p-4 space-y-4 max-h-[70vh] flex flex-col justify-between">
+      <div className="card p-3 space-y-3 h-full min-h-0 flex flex-col justify-between overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
@@ -354,7 +354,7 @@ export default function QuizManager({
         </div>
 
         {/* Builder Content */}
-        <div className="flex-1 overflow-auto space-y-4 pr-1 min-h-[300px]">
+        <div className="flex-1 min-h-0 overflow-auto space-y-3 pr-1">
           {/* Title field */}
           <div className="space-y-1.5">
             <label className="section-title">Quiz Set Name</label>
@@ -464,9 +464,9 @@ export default function QuizManager({
 
   // ── 3. LAUNCH / GAMEPLAY VIEW ────────────────────────
   return (
-    <div className="card p-4 space-y-3">
+    <div className="card p-3 space-y-2 h-full min-h-0 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-2 shrink-0">
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-zinc-500" />
           <span className="text-sm font-semibold text-zinc-200">Active Session Quiz</span>
@@ -505,7 +505,7 @@ export default function QuizManager({
         </div>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
         <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
           <span>{questionCount} questions loaded in room</span>
           <span className="font-mono">{askedQuestions.length} / {questionCount} completed</span>
@@ -529,7 +529,7 @@ export default function QuizManager({
           }
 
           return (
-            <div className="bg-zinc-900/40 border border-zinc-800/80 p-3 rounded-xl space-y-2 text-left">
+            <div className="bg-zinc-900/40 border border-zinc-800/80 p-2.5 rounded-xl space-y-2 text-left">
               <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Set Playback Controls</span>
               {nextAction === 'start' && (
                 <button
@@ -569,7 +569,7 @@ export default function QuizManager({
 
         {/* Projector Leaderboard / Podium Controls */}
         {askedQuestions.length > 0 && activeQuestionIndex === -1 && (
-          <div className="bg-violet-950/20 border border-violet-900/30 rounded-xl p-3 space-y-2 text-center animate-in fade-in duration-200">
+          <div className="bg-violet-950/20 border border-violet-900/30 rounded-xl p-2.5 space-y-2 text-center animate-in fade-in duration-200">
             <p className="text-xs text-violet-350 font-semibold tracking-wide uppercase">Projector Controls</p>
             <div className="flex gap-2">
               <button
@@ -594,7 +594,7 @@ export default function QuizManager({
         {Array.from({ length: questionCount }, (_, i) => (
           <div
             key={i}
-            className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border transition-colors
+            className={`flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg border transition-colors
               ${activeQuestionIndex === i ? 'bg-violet-900/30 border-violet-700/50' : 'bg-zinc-800/40 border-zinc-700/30'}`}
           >
             <div className="flex items-center gap-2 min-w-0">

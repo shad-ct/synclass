@@ -33,15 +33,15 @@ export default function BroadcastPanel({ onBroadcast, recentBroadcasts }: Broadc
   };
 
   return (
-    <div className="card p-4 space-y-3">
+    <div className="card h-full min-h-0 p-3 space-y-2 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <Send className="w-4 h-4 text-zinc-500" />
         <span className="text-sm font-semibold text-zinc-200">Broadcast</span>
       </div>
 
       {/* Type selector */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 shrink-0">
         <button
           onClick={() => setContentType('code')}
           className={`btn btn-sm flex-1 ${contentType === 'code' ? 'btn-primary' : 'btn-secondary'}`}
@@ -67,11 +67,11 @@ export default function BroadcastPanel({ onBroadcast, recentBroadcasts }: Broadc
         placeholder={contentType === 'code'
           ? '// Paste your code snippet here…\nconst x = 42;'
           : 'Type a message to broadcast to your audience…'}
-        rows={6}
-        className="textarea w-full"
+        rows={3}
+        className="textarea w-full flex-1 min-h-[64px]"
       />
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 shrink-0">
         <p className="text-xs text-zinc-600">Ctrl+Enter to send</p>
         <button
           id="broadcast-send-btn"
@@ -86,12 +86,12 @@ export default function BroadcastPanel({ onBroadcast, recentBroadcasts }: Broadc
 
       {/* Recent broadcasts history */}
       {recentBroadcasts.length > 0 && (
-        <details className="group">
+        <details className="group shrink-0">
           <summary className="flex items-center gap-1 text-xs text-zinc-600 cursor-pointer hover:text-zinc-400 list-none">
             <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
             {recentBroadcasts.length} sent this session
           </summary>
-          <div className="mt-2 space-y-1.5 max-h-40 overflow-y-auto">
+          <div className="mt-2 space-y-1.5 max-h-20 overflow-y-auto">
             {recentBroadcasts.map((b, i) => (
               <div key={i} className="bg-zinc-800/60 rounded-lg p-2 flex items-start gap-2 cursor-pointer hover:bg-zinc-800"
                 onClick={() => setContent(b.content)}>

@@ -20,6 +20,13 @@
  *     questionStartTime: number,
  *     responses: Map<guestId, { selectedOption, responseTimeMs, isCorrect, pointsAwarded }>,
  *     scores: Map<guestId, { name, totalPoints, correctAnswers }>
+ *   } | null,
+ *   pollState: {
+ *     id: string,
+ *     question: string,
+ *     options: string[],
+ *     isActive: boolean,
+ *     responses: Map<guestId, { guestId, name, optionIndex, answeredAt }>
  *   } | null
  * }
  */
@@ -31,6 +38,7 @@ const quizHandler = require('./quizHandler');
 const confusionHandler = require('./confusionHandler');
 const broadcastHandler = require('./broadcastHandler');
 const handraiseHandler = require('./handraiseHandler');
+const pollHandler = require('./pollHandler');
 const { getRosterArray } = require('./socketUtils');
 
 /** @type {Map<string, object>} roomCode → room state */
@@ -52,6 +60,7 @@ function createRoomState(hostSocketId, sessionId) {
     attendees: new Map(),
     confusionInterval: null,
     quizState: null,
+    pollState: null,
   };
 }
 
@@ -122,6 +131,14 @@ function initSocketController(io) {
             scores: scoresMap
           };
           console.log(`[socket] Restored quizState for room ${code} with ${latestQuiz.questions.length} questions`);
+        }
+
+        if (!room.pollState && sessionDoc.polls && sessionDoc.polls.length > 0) {
+          const activePoll = [...sessionDoc.polls].reverse().find((poll) => poll.isActive);
+          if (activePoll) {
+            room.pollState = pollHandler.buildPollStateFromDoc(activePoll);
+            console.log(`[socket] Restored active poll for room ${code}`);
+          }
         }
 
         // Restore attendee states from DB if the room in memory doesn't have them
@@ -317,6 +334,21 @@ function initSocketController(io) {
 
     socket.on('push_resource', (payload) =>
       broadcastHandler.handlePushResource(io, socket, payload, rooms)
+    );
+
+    // ─────────────────────────────────────────────
+    // LIVE POLLS
+    // ─────────────────────────────────────────────
+    socket.on('create_poll', (payload) =>
+      pollHandler.handleCreatePoll(io, socket, payload, rooms)
+    );
+
+    socket.on('submit_poll_vote', (payload) =>
+      pollHandler.handleSubmitPollVote(io, socket, payload, rooms)
+    );
+
+    socket.on('close_poll', (payload) =>
+      pollHandler.handleClosePoll(io, socket, payload, rooms)
     );
 
     // ─────────────────────────────────────────────

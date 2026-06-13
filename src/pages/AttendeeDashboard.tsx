@@ -16,6 +16,8 @@ import SnippetOverlay from '../components/attendee/SnippetOverlay';
 import ResourceToast from '../components/attendee/ResourceToast';
 import QuizQuestion from '../components/attendee/QuizQuestion';
 import ConfusionToggle from '../components/attendee/ConfusionToggle';
+import PollOverlay from '../components/attendee/PollOverlay';
+import type { PollSummary } from '../types/poll';
 import Avatar from 'boring-avatars';
 const AvatarComponent = (Avatar as any).default || Avatar;
 
@@ -82,6 +84,7 @@ export default function AttendeeDashboard() {
   const [scoreboardData, setScoreboardData] = useState<{ leaderboard: LeaderboardEntry[] } | null>(null);
   const [podiumData, setPodiumData] = useState<{ leaderboard: LeaderboardEntry[] } | null>(null);
   const [currentRankInfo, setCurrentRankInfo] = useState<{ rank: number; totalPlayers: number; totalPoints: number } | null>(null);
+  const [activePoll, setActivePoll] = useState<PollSummary | null>(null);
 
   // Handraise states
   const [isHandRaised, setIsHandRaised] = useState(false);
@@ -185,6 +188,29 @@ export default function AttendeeDashboard() {
     setResource(data);
   }, []));
 
+  useSocket('poll_started', useCallback((poll: PollSummary) => {
+    setActivePoll(poll);
+  }, []));
+
+  useSocket('poll_vote_recorded', useCallback(({ poll }: { poll: PollSummary }) => {
+    setActivePoll(poll);
+  }, []));
+
+  useSocket('poll_results_update', useCallback(({ poll }: { poll: PollSummary }) => {
+    setActivePoll((prev) => {
+      if (!prev || prev.id !== poll.id) return poll;
+      return {
+        ...poll,
+        hasResponded: prev.hasResponded,
+        selectedOption: prev.selectedOption ?? null,
+      };
+    });
+  }, []));
+
+  useSocket('poll_closed', useCallback(() => {
+    setActivePoll(null);
+  }, []));
+
   useSocket('question_start', useCallback((data: { questionIndex: number; text: string; options: string[]; timeLimit: number; secondsLeft: number }) => {
     setActiveQuestion({ ...data });
     setHasAnswered(false);
@@ -272,6 +298,27 @@ export default function AttendeeDashboard() {
       selectedOption,
     });
     setHasAnswered(true);
+  };
+
+  const handleSubmitPollVote = (selectedOption: number) => {
+    if (!activePoll || !guest) return;
+
+    setActivePoll((prev) => {
+      if (!prev || prev.id !== activePoll.id) return prev;
+      return {
+        ...prev,
+        hasResponded: true,
+        selectedOption,
+      };
+    });
+
+    socket.emit('submit_poll_vote', {
+      roomCode: roomCode?.toUpperCase(),
+      pollId: activePoll.id,
+      guestId: guest.guestId,
+      name: guest.name,
+      optionIndex: selectedOption,
+    });
   };
 
   const handleStatusChange = (status: 'fine' | 'lost') => {
@@ -588,6 +635,14 @@ export default function AttendeeDashboard() {
         resource={resource}
         onDismiss={() => setResource(null)}
       />
+
+      {activePoll?.isActive && (
+        <PollOverlay
+          poll={activePoll}
+          selectedOption={activePoll.selectedOption ?? null}
+          onSubmit={handleSubmitPollVote}
+        />
+      )}
 
       {activeQuestion && (
         <QuizQuestion

@@ -64,9 +64,9 @@ export default function AttendeeRoster({
   const anyHandsRaised = attendees.some((a) => a.isHandRaised);
 
   return (
-    <div className="card h-full flex flex-col">
+    <div className="card h-full min-h-0 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-zinc-800 flex items-center justify-between gap-2 flex-wrap">
+      <div className="p-3 border-b border-zinc-800 flex items-center justify-between gap-2 flex-wrap shrink-0">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-zinc-500" />
           <span className="text-sm font-semibold text-zinc-200">Attendees</span>
@@ -80,7 +80,7 @@ export default function AttendeeRoster({
               className="btn btn-sm bg-violet-900/30 border border-violet-800/40 hover:bg-violet-900/60 text-violet-300 transition-all duration-150 animate-pulse"
             >
               <Hand className="w-3.5 h-3.5" />
-              Lower All Hands
+              Lower Hands
             </button>
           )}
           <button
@@ -89,7 +89,7 @@ export default function AttendeeRoster({
             className="btn-secondary btn-sm"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Take Attendance
+            Attendance
           </button>
           {selected.size > 0 && (
             <button
@@ -108,13 +108,13 @@ export default function AttendeeRoster({
             className="btn-ghost btn-sm"
           >
             <Bell className="w-3.5 h-3.5" />
-            Buzz All
+            Buzz
           </button>
         </div>
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+      <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5">
         {attendees.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-zinc-600 gap-2 py-8">
             <Users className="w-8 h-8" />
@@ -133,7 +133,7 @@ export default function AttendeeRoster({
               <div
                 key={attendee.guestId}
                 onClick={() => toggleSelect(attendee.guestId)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
+                className={`flex items-center gap-3 px-2.5 py-2 rounded-lg cursor-pointer
                             transition-colors duration-100 select-none
                             ${isChecked ? 'bg-violet-900/30 border border-violet-700/50' : 'hover:bg-zinc-800/60'}`}
               >
@@ -165,7 +165,7 @@ export default function AttendeeRoster({
                     )}
                   </div>
                   {attendee.isHandRaised && attendee.handRaiseQuestion && (
-                    <p className="text-xs text-violet-300 font-medium italic break-words mt-0.5 bg-violet-950/20 border border-violet-900/30 rounded px-2 py-1 max-w-[240px]">
+                    <p className="text-xs text-violet-300 font-medium italic break-words mt-0.5 bg-violet-950/20 border border-violet-900/30 rounded px-2 py-1 max-w-[190px]">
                       Q: "{attendee.handRaiseQuestion}"
                     </p>
                   )}

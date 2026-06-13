@@ -17,7 +17,9 @@ import ResourceManager from '../components/host/ResourceManager';
 import BroadcastPanel from '../components/host/BroadcastPanel';
 import ConfusionMeter from '../components/host/ConfusionMeter';
 import ControlBar from '../components/host/ControlBar';
+import PollManager from '../components/host/PollManager';
 import { SERVER_URL } from '../config';
+import type { PollSummary } from '../types/poll';
 
 interface Attendee {
   guestId: string;
@@ -89,6 +91,7 @@ export default function HostDashboard() {
   const [quizQuestionCount, setQuizQuestionCount] = useState(0);
   const [attendanceLog, setAttendanceLog] = useState<Array<{ guestId: string; name: string }>>([]);
   const [askedQuestions, setAskedQuestions] = useState<number[]>([]);
+  const [activePoll, setActivePoll] = useState<PollSummary | null>(null);
   const [questions, setQuestions] = useState<Question[]>([
     { text: '', options: ['', '', '', ''], correctIndex: 0, timeLimit: 20 }
   ]);
@@ -161,6 +164,7 @@ export default function HostDashboard() {
             setIsFrozen(data.isFrozen);
             setResources(data.resources || []);
             setBroadcasts(data.broadcasts || []);
+            setActivePoll(data.poll || null);
             if (data.quiz) {
               setQuizCreated(true);
               setQuizQuestionCount(data.quiz.questionCount);
@@ -218,6 +222,22 @@ export default function HostDashboard() {
       if (prev.some((a) => a.guestId === guestId)) return prev;
       return [...prev, { guestId, name }];
     });
+  }, []));
+
+  useSocket('poll_created', useCallback(({ poll }: { poll: PollSummary }) => {
+    setActivePoll(poll);
+  }, []));
+
+  useSocket('poll_results_update', useCallback(({ poll }: { poll: PollSummary }) => {
+    setActivePoll(poll);
+  }, []));
+
+  useSocket('poll_closed', useCallback(({ poll }: { poll: PollSummary }) => {
+    setActivePoll(poll);
+  }, []));
+
+  useSocket('poll_error', useCallback(({ message }: { message: string }) => {
+    alert(`Poll Error: ${message}`);
   }, []));
 
   // ── Host Actions ────────────────────────────────────
@@ -280,6 +300,15 @@ export default function HostDashboard() {
     setBroadcasts((prev) => [{ content, type: contentType, sentAt: new Date().toISOString() }, ...prev]);
   };
 
+  const handleCreatePoll = (question: string, options: string[]) => {
+    socket.emit('create_poll', { roomCode, question, options });
+  };
+
+  const handleClosePoll = () => {
+    if (!activePoll) return;
+    socket.emit('close_poll', { roomCode, pollId: activePoll.id });
+  };
+
   const handleResourceUploaded = (resource: Resource) => {
     setResources((prev) => [resource, ...prev]);
   };
@@ -306,6 +335,7 @@ export default function HostDashboard() {
         setActiveQuestionIndex(-1);
         setQuizCreated(false);
         setQuizQuestionCount(0);
+        setActivePoll(null);
         socket.disconnect();
       }
     } catch (err) {
@@ -428,49 +458,49 @@ export default function HostDashboard() {
 
   // ── Active Dashboard ────────────────────────────────
   return (
-    <div className="min-h-dvh bg-zinc-950 flex flex-col">
+    <div className="h-dvh bg-zinc-950 flex flex-col overflow-hidden">
       {/* Top nav */}
-      <header className="border-b border-zinc-900 px-6 py-4 space-y-3">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
-            <Radio className="w-4 h-4 text-white" />
+      <header className="shrink-0 border-b border-zinc-900 px-4 py-2">
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center shrink-0">
+              <Radio className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-bold text-zinc-300">SynClass</span>
           </div>
-          <span className="text-sm font-bold text-zinc-300">SynClass</span>
+          <RoomHeader
+            roomCode={roomCode}
+            attendeeCount={attendees.filter((a) => a.isOnline).length}
+            isConnected={isConnected}
+          />
+          <ControlBar
+            isFrozen={isFrozen}
+            onToggleFreeze={handleToggleFreeze}
+            onBuzzAll={() => handleBuzz([], true)}
+            onEndSession={handleEndSession}
+            attendeeCount={attendees.filter((a) => a.isOnline).length}
+          />
         </div>
-        <RoomHeader
-          roomCode={roomCode}
-          attendeeCount={attendees.filter((a) => a.isOnline).length}
-          isConnected={isConnected}
-        />
-        <ControlBar
-          isFrozen={isFrozen}
-          onToggleFreeze={handleToggleFreeze}
-          onBuzzAll={() => handleBuzz([], true)}
-          onEndSession={handleEndSession}
-          attendeeCount={attendees.filter((a) => a.isOnline).length}
-        />
       </header>
 
       {/* Main grid */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 overflow-auto">
+      <main className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(280px,0.9fr)_minmax(410px,1.35fr)_minmax(300px,0.95fr)] gap-3 p-3 overflow-auto lg:overflow-hidden">
         {/* ─ Left Column ─────────────────────────── */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="h-96 lg:h-[calc(100vh-340px)]">
-            <AttendeeRoster
-              attendees={attendees}
-              onBuzz={handleBuzz}
-              onTriggerAttendance={handleTriggerAttendance}
-              onLowerHand={handleLowerStudentHand}
-              onLowerAllHands={handleLowerAllHands}
-              onKickUser={handleKickUser}
-              attendanceLog={attendanceLog}
-            />
-          </div>
+        <div className="lg:col-span-1 min-h-0 grid grid-rows-[minmax(0,1fr)_150px] gap-3">
+          <AttendeeRoster
+            attendees={attendees}
+            onBuzz={handleBuzz}
+            onTriggerAttendance={handleTriggerAttendance}
+            onLowerHand={handleLowerStudentHand}
+            onLowerAllHands={handleLowerAllHands}
+            onKickUser={handleKickUser}
+            attendanceLog={attendanceLog}
+          />
           <ConfusionMeter latest={confusionData} />
         </div>
 
         {/* ─ Middle Column ───────────────────────── */}
-        <div className="lg:col-span-1 space-y-4">
+        <div className="lg:col-span-1 min-h-0 grid grid-rows-[minmax(0,1fr)_minmax(132px,0.38fr)] gap-3">
           <QuizManager
             questions={questions}
             setQuestions={setQuestions}
@@ -494,7 +524,12 @@ export default function HostDashboard() {
         </div>
 
         {/* ─ Right Column ────────────────────────── */}
-        <div className="lg:col-span-1 space-y-4">
+        <div className="lg:col-span-1 min-h-0 grid grid-rows-[minmax(225px,1.05fr)_minmax(205px,0.95fr)_minmax(160px,0.75fr)] gap-3">
+          <PollManager
+            activePoll={activePoll}
+            onCreatePoll={handleCreatePoll}
+            onClosePoll={handleClosePoll}
+          />
           <BroadcastPanel
             onBroadcast={handleBroadcast}
             recentBroadcasts={broadcasts}

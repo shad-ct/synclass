@@ -37,12 +37,12 @@ const RANK_ICONS: Record<number, string> = {
 export default function Leaderboard({ entries, questionIndex }: LeaderboardProps) {
   if (entries.length === 0) {
     return (
-      <div className="card p-4 space-y-3">
+      <div className="card h-full min-h-0 p-3 space-y-2 flex flex-col overflow-hidden">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-500" />
           <span className="text-sm font-semibold text-zinc-200">Leaderboard</span>
         </div>
-        <div className="text-center py-6 text-zinc-600 text-sm">
+        <div className="flex-1 flex items-center justify-center text-zinc-600 text-sm">
           Scores will appear after the first question
         </div>
       </div>
@@ -50,7 +50,7 @@ export default function Leaderboard({ entries, questionIndex }: LeaderboardProps
   }
 
   return (
-    <div className="card p-4 space-y-3">
+    <div className="card h-full min-h-0 p-3 space-y-2 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -63,13 +63,13 @@ export default function Leaderboard({ entries, questionIndex }: LeaderboardProps
       </div>
 
       {/* Entries */}
-      <div className="space-y-1.5">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
         {entries.slice(0, 10).map((entry) => {
           const isTop3 = entry.rank <= 3;
           return (
             <div
               key={entry.guestId}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
+              className={`flex items-center gap-3 px-2.5 py-2 rounded-lg transition-colors
                 ${isTop3 ? 'bg-amber-900/10 border border-amber-800/20' : 'bg-zinc-800/40'}`}
             >
               {/* Rank */}
