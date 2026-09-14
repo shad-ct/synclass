@@ -6,8 +6,8 @@
  * - build: Editor view to create a new quiz set or modify an existing one (includes Title and full question CRUD).
  * - launch: Active quiz gameplay view (visible when a quiz is running in the current session).
  */
-import { useState, useEffect } from 'react';
-import { Plus, Trash2, PlayCircle, BookOpen, X, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, PlayCircle, BookOpen, X, Loader2, Upload } from 'lucide-react';
 import { SERVER_URL } from '../../config';
 
 const ArrowLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -21,6 +21,14 @@ const EditIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M12 20h9" />
     <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
+
+const InfoIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 16v-4" />
+    <path d="M12 8h.01" />
   </svg>
 );
 
@@ -98,6 +106,7 @@ export default function QuizManager({
   const [view, setView] = useState<'list' | 'build' | 'launch'>(quizCreated ? 'launch' : 'list');
   const [quizSets, setQuizSets] = useState<QuizSet[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showImportHint, setShowImportHint] = useState(false);
 
   // Editor states
   const [editingSet, setEditingSet] = useState<QuizSet | null>(null);
@@ -191,11 +200,118 @@ export default function QuizManager({
     }
   };
 
+  // ── FILE IMPORT ────────────────────────────────────────
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+
+  /** Normalise a raw parsed question object into our Question shape, returning null if invalid. */
+  const normaliseQuestion = (raw: any, _index: number): Question | null => {
+    const text = (raw.text ?? raw.question ?? '').toString().trim();
+    if (!text) return null;
+
+    let options: string[] = [];
+    if (Array.isArray(raw.options) && raw.options.length >= 2) {
+      options = raw.options.map((o: any) => String(o).trim());
+    } else if (raw.optionA !== undefined) {
+      options = ['optionA', 'optionB', 'optionC', 'optionD']
+        .map((k) => (raw[k] !== undefined ? String(raw[k]).trim() : ''))
+        .filter(Boolean);
+    }
+    if (options.length < 2) return null;
+
+    while (options.length < 4) options.push('');
+    options = options.slice(0, 4);
+
+    let correctIndex = 0;
+    const rawCI = raw.correctIndex ?? raw.correct ?? raw.answer;
+    if (typeof rawCI === 'number') {
+      correctIndex = Math.min(Math.max(rawCI, 0), options.length - 1);
+    } else if (typeof rawCI === 'string') {
+      const upper = rawCI.toUpperCase();
+      if ('ABCD'.includes(upper) && upper.length === 1) {
+        correctIndex = 'ABCD'.indexOf(upper);
+      } else {
+        const parsed = parseInt(rawCI, 10);
+        if (!isNaN(parsed)) correctIndex = Math.min(Math.max(parsed, 0), options.length - 1);
+      }
+    }
+
+    const timeLimit = raw.timeLimit ?? raw.time ?? raw.timer ?? 20;
+    return {
+      text,
+      options,
+      correctIndex,
+      timeLimit: typeof timeLimit === 'number' ? timeLimit : 20,
+    };
+  };
+
+  const parseJSONImport = (content: string): { title: string; questions: Question[] } | string => {
+    let parsed: any;
+    try { parsed = JSON.parse(content); } catch {
+      return 'Invalid JSON — could not parse file.';
+    }
+    const rawTitle: string = parsed.title ?? '';
+    const rawQuestions: any[] = Array.isArray(parsed) ? parsed : (parsed.questions ?? []);
+    if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
+      return 'No questions found. Expected { title, questions: [...] } or a top-level array.';
+    }
+    const questions: Question[] = [];
+    for (let i = 0; i < rawQuestions.length; i++) {
+      const q = normaliseQuestion(rawQuestions[i], i);
+      if (!q) return `Question ${i + 1} is invalid — check text and options.`;
+      questions.push(q);
+    }
+    return { title: rawTitle, questions };
+  };
+
+  const parseCSVImport = (content: string): { title: string; questions: Question[] } | string => {
+    const lines = content.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length < 2) return 'CSV must have a header row and at least one question row.';
+    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/['"]/g, ''));
+    const questions: Question[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map((c) => c.trim().replace(/^"|"$/g, ''));
+      const raw: Record<string, string> = {};
+      headers.forEach((h, hi) => { raw[h] = cols[hi] ?? ''; });
+      const q = normaliseQuestion(raw, i);
+      if (!q) return `Row ${i + 1} is invalid — check required columns (text, options or optionA-D, correctIndex).`;
+      questions.push(q);
+    }
+    if (questions.length === 0) return 'No valid questions found in CSV.';
+    return { title: '', questions };
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string;
+      let result: { title: string; questions: Question[] } | string;
+      if (ext === 'json') result = parseJSONImport(content);
+      else if (ext === 'csv') result = parseCSVImport(content);
+      else {
+        setImportError('Unsupported file type. Please upload a .json or .csv file.');
+        return;
+      }
+      if (typeof result === 'string') { setImportError(result); return; }
+      setImportError(null);
+      setEditingSet(null);
+      setTitle(result.title);
+      setEditorQuestions(result.questions);
+      setView('build');
+    };
+    reader.readAsText(file);
+  };
+
   // Enter builder to create new quiz set
   const handleNewQuizSet = () => {
     setEditingSet(null);
     setTitle('');
     setEditorQuestions([{ text: '', options: ['', '', '', ''], correctIndex: 0, timeLimit: 20 }]);
+    setImportError(null);
     setView('build');
   };
 
@@ -251,22 +367,107 @@ export default function QuizManager({
     return (
       <div className="card p-3 space-y-2 h-full min-h-0 flex flex-col justify-between overflow-hidden">
         <div className="space-y-2 flex-1 flex flex-col min-h-0">
+          {/* Hidden file input for import */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,.csv"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-zinc-500" />
               <span className="text-sm font-semibold text-zinc-200">Quiz Sets</span>
             </div>
-            <button
-              onClick={handleNewQuizSet}
-              className="btn btn-sm btn-primary text-xs flex items-center gap-1 cursor-pointer select-none"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Create Set
-            </button>
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center">
+                <button
+                  onClick={() => { setImportError(null); fileInputRef.current?.click(); }}
+                  className="btn btn-sm btn-ghost text-xs flex items-center gap-1 cursor-pointer select-none border border-zinc-700/60 hover:border-zinc-500 text-zinc-400 hover:text-zinc-200 transition-colors rounded-r-none border-r-0"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Import
+                </button>
+                <button
+                  onClick={() => setShowImportHint((v) => !v)}
+                  className={`btn btn-sm btn-ghost px-1.5 cursor-pointer select-none border border-zinc-700/60 hover:border-zinc-500 transition-colors rounded-l-none ${
+                    showImportHint ? 'text-violet-400 border-violet-700/60 bg-violet-950/20' : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                  title="Show accepted file formats"
+                >
+                  <InfoIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <button
+                onClick={handleNewQuizSet}
+                className="btn btn-sm btn-primary text-xs flex items-center gap-1 cursor-pointer select-none"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Create Set
+              </button>
+            </div>
           </div>
 
+          {/* Import format hint panel */}
+          {showImportHint && (
+            <div className="bg-violet-950/20 border border-violet-800/40 rounded-xl p-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-violet-300 uppercase tracking-wider">Accepted file formats</span>
+                <button onClick={() => setShowImportHint(false)} className="text-zinc-500 hover:text-zinc-300 cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* JSON */}
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-zinc-300">📄 JSON <span className="text-zinc-600 font-normal ml-1">.json</span></p>
+                <pre className="text-[10px] text-zinc-400 bg-zinc-950/60 border border-zinc-800 rounded-lg p-2 overflow-x-auto leading-relaxed font-mono">{
+`{
+  "title": "My Quiz",
+  "questions": [{
+    "text": "Question text?",
+    "options": ["A","B","C","D"],
+    "correctIndex": 0,
+    "timeLimit": 20
+  }]
+}`}</pre>
+                <p className="text-[10px] text-zinc-500 leading-relaxed">
+                  <span className="text-zinc-400 font-medium">correctIndex</span> — 0-based (0 = first option). <span className="text-zinc-400 font-medium">timeLimit</span> — seconds, default 20.
+                </p>
+              </div>
+
+              {/* CSV */}
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-zinc-300">📊 CSV <span className="text-zinc-600 font-normal ml-1">.csv</span></p>
+                <pre className="text-[10px] text-zinc-400 bg-zinc-950/60 border border-zinc-800 rounded-lg p-2 overflow-x-auto leading-relaxed font-mono">{
+`text,optionA,optionB,optionC,optionD,correctIndex,timeLimit
+What is 2+2?,1,2,4,8,2,20
+Sky color?,Red,Blue,Green,Yellow,B,15`}</pre>
+                <p className="text-[10px] text-zinc-500 leading-relaxed">
+                  <span className="text-zinc-400 font-medium">correctIndex</span> — number (0–3) <span className="text-zinc-600">or</span> letter (A–D). First row must be the header.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Import error feedback */}
+          {importError && (
+            <div className="flex items-start gap-2 bg-red-950/30 border border-red-800/50 rounded-lg px-2.5 py-2 animate-in fade-in duration-200">
+              <span className="text-red-400 text-[11px] leading-relaxed flex-1">{importError}</span>
+              <button
+                onClick={() => setImportError(null)}
+                className="text-red-500 hover:text-red-300 shrink-0 cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
           {/* List content */}
+
           <div className="flex-1 min-h-0 overflow-auto space-y-2 pr-1">
             {loading ? (
               <div className="h-full min-h-32 flex flex-col items-center justify-center gap-2 text-zinc-500">
@@ -275,13 +476,22 @@ export default function QuizManager({
               </div>
             ) : quizSets.length === 0 ? (
               <div className="h-full min-h-32 border border-dashed border-zinc-800 rounded-xl flex flex-col items-center justify-center p-4 text-center space-y-2">
-                <p className="text-xs text-zinc-500 font-medium">No quiz sets saved in DB yet.</p>
-                <button
-                  onClick={handleNewQuizSet}
-                  className="text-xs text-violet-400 hover:text-violet-300 font-bold select-none cursor-pointer"
-                >
-                  Create one now
-                </button>
+                <p className="text-xs text-zinc-500 font-medium">No quiz sets saved yet.</p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleNewQuizSet}
+                    className="text-xs text-violet-400 hover:text-violet-300 font-bold select-none cursor-pointer"
+                  >
+                    Create one
+                  </button>
+                  <span className="text-zinc-700 text-xs">or</span>
+                  <button
+                    onClick={() => { setImportError(null); fileInputRef.current?.click(); }}
+                    className="text-xs text-violet-400 hover:text-violet-300 font-bold select-none cursor-pointer flex items-center gap-1"
+                  >
+                    <Upload className="w-3 h-3" /> Import file
+                  </button>
+                </div>
               </div>
             ) : (
               quizSets.map((set) => (

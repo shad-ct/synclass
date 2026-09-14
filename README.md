@@ -25,7 +25,79 @@
 
 - Dedicated projector screen with lobby (QR + physics-floating attendee bubbles), question view with countdown, animated results bars, scoreboard, and podium with confetti rain
 
+## Importing Quiz Sets
+
+You can bulk-import questions into a Quiz Set from the **Quiz Sets** panel → **Import** button. The file is parsed entirely in the browser — nothing is saved until you hit **Save Quiz Set** in the editor.
+
+Supported formats: **JSON** and **CSV**.
+
+---
+
+### JSON format
+
+The preferred format. Supports a named quiz set with full control over every field.
+
+```json
+{
+  "title": "JavaScript Basics",
+  "questions": [
+    {
+      "text": "What keyword declares a block-scoped variable?",
+      "options": ["var", "let", "const", "define"],
+      "correctIndex": 1,
+      "timeLimit": 20
+    },
+    {
+      "text": "Which method converts JSON to a JavaScript object?",
+      "options": ["JSON.stringify()", "JSON.parse()", "JSON.toObject()", "JSON.decode()"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    }
+  ]
+}
+```
+
+**JSON field reference:**
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `title` | `string` | No | Pre-fills the quiz set name; you can edit it before saving |
+| `questions` | `array` | Yes | Array of question objects (min 1) |
+| `questions[].text` | `string` | Yes | The question prompt. Also accepted as `"question"` |
+| `questions[].options` | `string[]` | Yes | 2–4 answer choices |
+| `questions[].correctIndex` | `number` | Yes | 0-based index of the correct option (0 = first option) |
+| `questions[].timeLimit` | `number` | No | Seconds per question (default: `20`) |
+
+> **Tip:** You can also pass a bare array of question objects (without a wrapping `title`/`questions` envelope) and the title will default to blank.
+
+---
+
+### CSV format
+
+Good for spreadsheet-based workflows. Each row is one question.
+
+```csv
+text,optionA,optionB,optionC,optionD,correctIndex,timeLimit
+What is 2 + 2?,1,2,4,8,2,15
+What color is the sky?,Red,Blue,Green,Yellow,B,20
+Who wrote Hamlet?,Dickens,Shakespeare,Tolstoy,Austen,1,20
+```
+
+**CSV field reference:**
+
+| Column | Required | Notes |
+|---|---|---|
+| `text` | Yes | Question prompt (also accepted as `question`) |
+| `optionA` / `optionB` / `optionC` / `optionD` | Yes | Answer choices (at least A & B required) |
+| `correctIndex` | Yes | Zero-based number (`0` = A, `1` = B …) **or** letter (`A`, `B`, `C`, `D`) |
+| `timeLimit` | No | Seconds; defaults to `20` if omitted |
+
+> **Note:** The first row must be a header row exactly matching the column names above (case-insensitive). CSV does not support setting a quiz title — you'll be prompted to name it in the editor.
+
+---
+
 ## Tech stack
+
 
 | Layer    | Tech                                                       |
 | -------- | ---------------------------------------------------------- |
